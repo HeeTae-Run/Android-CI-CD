@@ -38,3 +38,23 @@ jobs:
       # 6. Debug APK 빌드 (서명 설정 불필요)
       - name: Build Debug APK
         run: ./gradlew assembleDebug
+
+      # 7. 현재 날짜 가져오기 및 APK 파일명 변경
+      - name: Rename APK with Date
+        run: |
+          # 1) 현재 날짜를 YYYY-MM-DD 형식으로 변수(DATE)에 저장
+          DATE=$(date +%Y-%m-%d)
+          
+          # 2) 파일명을 변경 (app-debug.apk -> app-dev-2026-01-29.apk)
+          mv app/build/outputs/apk/debug/app-debug.apk app/build/outputs/apk/debug/app-dev-$DATE.apk
+          
+          # 3) 다음 단계(Upload)에서 쓸 수 있게 환경변수(NEW_APK_NAME)로 등록
+          echo "NEW_APK_NAME=app-dev-$DATE.apk" >> $GITHUB_ENV
+
+      # 8. 변경된 파일명으로 업로드
+      - name: Upload Debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.NEW_APK_NAME }}  # Artifact(압축파일) 이름도 날짜로 설정
+          path: app/build/outputs/apk/debug/${{ env.NEW_APK_NAME }} # 변경된 파일 경로 업로드
+          retention-days: 1
