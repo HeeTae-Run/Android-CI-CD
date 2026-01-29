@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "526490702064",
+    "project_id": "githubactiontest-e7340",
+    "storage_bucket": "githubactiontest-e7340.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:526490702064:android:53680070723484bf4d3235",
+        "android_client_info": {
+          "package_name": "com.example.githubaction"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDtzuUAOeBDZkjK8nxAC_slg8UDbYy1VqQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
