@@ -29,7 +29,7 @@ android {
     buildTypes {
         getByName("debug") {
             configure<com.google.firebase.appdistribution.gradle.AppDistributionExtension> {
-                appId = "githubactiontest-e7340"
+                appId = "1:526490702064:android:53680070723484bf4d3235"
 
                 artifactType = "APK"
                 releaseNotes = "Develop 브랜치 자동 배포"
