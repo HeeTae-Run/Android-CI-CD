@@ -14,6 +14,8 @@ jobs:
       # 1. 코드 내려받기
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       # 2. JDK 17 설정 (최신 안드로이드 프로젝트 표준)
       - name: Set up JDK 17

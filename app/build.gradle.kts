@@ -1,3 +1,32 @@
+import org.apache.commons.io.output.ByteArrayOutputStream
+
+fun getGitCommitCount(): Int {
+    return try {
+        val stdout = ByteArrayOutputStream()
+        exec {
+            commandLine("git", "rev-list", "--count", "HEAD")
+            standardOutput = stdout
+        }
+        stdout.toString().trim().toInt()
+    } catch (e: Exception) {
+        1
+    }
+}
+
+fun getGitCommitHash(): String {
+    return try {
+        val stdout = ByteArrayOutputStream()
+        exec {
+            commandLine("git", "rev-parse", "--short", "HEAD")
+            standardOutput = stdout
+        }
+        stdout.toString().trim()
+    } catch (e: Exception) {
+        "unknown"
+    }
+}
+
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -14,8 +43,8 @@ android {
         applicationId = "com.example.githubaction"
         minSdk = 28
         targetSdk = 36
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = getGitCommitCount()
+        versionName = "1.0.${getGitCommitCount()}-dev-${getGitCommitHash()}"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
