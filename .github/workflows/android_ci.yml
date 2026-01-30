@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. 코드 내려받기
+      # 1. 코드 내려받기 (커밋 히스토리 전체 포함)
       - name: Checkout code
         uses: actions/checkout@v4
         with:
@@ -23,53 +23,71 @@ jobs:
         with:
           java-version: '17'
           distribution: 'temurin'
-          cache: 'gradle' # Gradle 의존성 자동 캐싱 (빌드 속도 향상)
+          cache: 'gradle' # Gradle 의존성 자동 캐싱
 
-      # 3. Gradle 실행 권한 부여 (리눅스 환경 필수)
+      # 3. Gradle 실행 권한 부여
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
-      # 4. Lint 검사 (코드 스타일 및 잠재적 오류 확인 - 선택 사항)
+      # 4. Lint 검사 (선택 사항 - 현재 주석 처리됨)
       # - name: Run Lint
       #   run: ./gradlew lintDebug
 
-      # 5. 유닛 테스트 실행 (실패 시 여기서 파이프라인 중단됨)
+      # 5. 유닛 테스트 실행
       - name: Run Unit Tests
         run: ./gradlew testDebugUnitTest
 
-      # 6. Debug APK 빌드 (서명 설정 불필요)
+      # 6. Debug APK 빌드
       - name: Build Debug APK
         run: ./gradlew assembleDebug
 
-      # 7. 현재 날짜 가져오기 및 APK 파일명 변경
+      # 7. 현재 날짜 가져오기 및 Debug APK 파일명 변경
       - name: Rename APK with Date
         run: |
-          # 1) 현재 날짜를 YYYY-MM-DD 형식으로 변수(DATE)에 저장
           DATE=$(date +%Y-%m-%d)
-          
-          # 2) 파일명을 변경 (app-debug.apk -> app-dev-2026-01-29.apk)
           mv app/build/outputs/apk/debug/app-debug.apk app/build/outputs/apk/debug/app-dev-$DATE.apk
-          
-          # 3) 다음 단계(Upload)에서 쓸 수 있게 환경변수(NEW_APK_NAME)로 등록
           echo "NEW_APK_NAME=app-dev-$DATE.apk" >> $GITHUB_ENV
 
-      # 8. 변경된 파일명으로 업로드
+      # 8. 변경된 Debug APK 업로드 (GitHub Artifact)
       - name: Upload Debug APK
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ env.NEW_APK_NAME }}  # Artifact(압축파일) 이름도 날짜로 설정
-          path: app/build/outputs/apk/debug/${{ env.NEW_APK_NAME }} # 변경된 파일 경로 업로드
+          name: ${{ env.NEW_APK_NAME }}
+          path: app/build/outputs/apk/debug/${{ env.NEW_APK_NAME }}
           retention-days: 1
 
-      # 9. Firebase 인증 키 파일 생성 (GitHub Secret에서 꺼내오기)
+      # 9. Firebase 인증 키 파일 생성
       - name: Create Firebase Service Credentials file
         env:
           FIREBASE_CREDENTIAL: ${{ secrets.FIREBASE_CREDENTIAL }}
         run: |
           echo "$FIREBASE_CREDENTIAL" > app/firebase-auth.json
 
-      # 10. Firebase App Distribution 배포
+      # 10. Firebase App Distribution 배포 (Debug 버전)
       - name: Upload to Firebase App Distribution
         run: ./gradlew appDistributionUploadDebug
         env:
           GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx2g -Dfile.encoding=UTF-8"
+
+      # 11. 키스토어 파일 복원 (Base64 -> 파일)
+      - name: Decode Keystore
+        env:
+          ENCODED_STRING: ${{ secrets.APP_KEYSTORE_BASE64 }}
+        run: |
+          echo "$ENCODED_STRING" | base64 --decode > app/keystore.jks
+
+      # 12. Release APK 빌드 (서명 포함)
+      - name: Build Release APK
+        env:
+          APP_KEYSTORE_PASSWORD: ${{ secrets.APP_KEYSTORE_PASSWORD }}
+          APP_KEY_ALIAS: ${{ secrets.APP_KEY_ALIAS }}
+          APP_KEY_PASSWORD: ${{ secrets.APP_KEY_PASSWORD }}
+        run: ./gradlew assembleRelease
+
+      # 13. Release APK 업로드 (GitHub Artifact)
+      - name: Upload Release APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-apk
+          path: app/build/outputs/apk/release/*.apk
+          retention-days: 3
